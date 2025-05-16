@@ -1,0 +1,10 @@
+ {
+    "project_id": "your_project_id",
+    "app_id": "your_app_id",
+    "display_name": "Agent Name",
+    "description": "Agent Description",
+    "tool_description": "Tool Description",
+    "adk_deployment_id": "your_deployment_id",
+    "auth_id": "your_auth_id",
+    "agent_id": "your_agent_id"
+ }
