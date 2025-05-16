@@ -71,6 +71,7 @@ The following actions are supported:
 *   **`get`:** Retrieves details for a specific agent.
 *   **`update`:** Updates an existing agent.
 *   **`get_by_name`:** Retrieves an agent by its display name.
+*   **`delete`:** Deletes an existing agent.
 
 ### Options
 
@@ -85,7 +86,7 @@ The following options can be used to provide parameters:
 *   `--adk_deployment_id <adk_deployment_id>`: The Reasoning Engine ID (obtained after deploying the agent to Agent Engine).
 *   `--auth_id <auth_id>`: The authorization ID.
 *   `--icon_uri <icon_uri>`: URI for the agent's icon (optional).
-*   `--agent_id <agent_id>`: The ID of the agent (required for `get` and `update` actions).
+*   `--agent_id <agent_id>`: The ID of the agent (required for `get`, `update`, and `delete` actions).
 
 ### Examples
 
@@ -115,6 +116,18 @@ This will load `project_id` and `app_id` from `my_config.json` and use the provi
 
 ```bash
 python as_registry_client.py update --agent_id your-agent-id --display_name "New Agent Name"
+```
+
+**5. Get an agent by display name (using a configuration file and command-line argument):**
+
+```bash
+python as_registry_client.py get_by_name --display_name "Agent Name"  --config my_config.json   
+```
+
+**6. Delete an agent (using a configuration file and command-line argument):**
+
+```bash
+python as_registry_client.py delete --agent_id your-agent-id --config my_config.json
 ```
 
 This will update only the `display_name` of the agent with the specified ID, using other parameters from `config.json` or prompting the user if not found.

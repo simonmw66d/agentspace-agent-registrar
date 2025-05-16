@@ -280,3 +280,46 @@ def get_agent_by_display_name(project_id, app_id, display_name):
             return {"agent": agent}
 
     return {"message": f"Agent with display name '{display_name}' not found."}
+
+
+def delete_agent(project_id, app_id, agent_id):
+    """
+    Deletes an agent from the Agent Registry.
+
+    Args:
+        project_id (str): Google Cloud Project ID.
+        app_id (str): App ID for the Discovery Engine.
+        agent_id (str): ID of the agent to delete.
+
+    Returns:
+        dict: A dictionary containing the status code, stdout, and stderr of the curl command,
+              or an error message.
+    """
+    _check_required_params(locals(), ["project_id", "app_id", "agent_id"])
+
+    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+
+    # Construct the URL
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"
+
+    # Prepare the curl command
+    command = [
+        "curl", "-X", "DELETE",
+        # Although DELETE often doesn't need this, it's good practice
+        "-H", f"Authorization: Bearer {access_token}",
+        "-H", "Content-Type: application/json",  # Although DELETE often doesn't need this, it's good practice
+        "-H", f"X-Goog-User-Project: {project_id}",
+        url
+    ]
+
+    logging.info(f"Delete Agent Command: {command}")
+
+    # Execute the command
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        logging.info(f"Agent {agent_id} deleted successfully.")
+        return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "message": f"Agent {agent_id} deleted successfully."}
+    else:
+        logging.error(f"Error deleting agent {agent_id}: {result.returncode}, {result.stderr}")
+        return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "error": f"Error deleting agent: {result.stderr}"}

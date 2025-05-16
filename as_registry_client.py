@@ -4,8 +4,9 @@ import os
 from as_agent_registry_service import (
     create_agent,
     list_agents,
-    get_agent,
+    get_agent,    
     update_agent,
+    delete_agent,
     get_agent_by_display_name,
 )
 
@@ -45,7 +46,7 @@ def main():
     parser = argparse.ArgumentParser(description="Agent Registry Client")
     parser.add_argument(
         "action", nargs='?',
-        choices=["create", "list", "get", "update", "get_by_name"],
+        choices=["create", "list", "get", "update", "get_by_name", "delete"],
         help="Action to perform",
     )
     parser.add_argument("--icon_uri", help="Icon URI for the agent")
@@ -57,7 +58,7 @@ def main():
     parser.add_argument("--tool_description", help="Tool description")
     parser.add_argument("--adk_deployment_id", help="ADK deployment ID")
     parser.add_argument("--auth_id", help="Authorization ID")
-    parser.add_argument("--agent_id", help="Agent ID (for get and update)")
+    parser.add_argument("--agent_resource_name", help="Full Agent Resource Name (for delete)")
 
     args = parser.parse_args()
 
@@ -66,7 +67,7 @@ def main():
     action = args.action
     if not action:
         action = input(
-            "Enter action to perform (create, list, get, update, get_by_name): "
+            "Enter action to perform (create, list, get, update, get_by_name, delete): "
         )
 
     if action == "create":
@@ -201,6 +202,25 @@ def main():
 
         result = get_agent_by_display_name(project_id, app_id, display_name)
         print(json.dumps(result, indent=2))
+
+    elif action == "delete":
+        project_id = get_parameter(
+            "project_id", config, args, "Enter Google Cloud Project ID"
+        )
+        app_id = get_parameter("app_id", config, args, "Enter App ID")
+        agent_id = get_parameter("agent_id", config, args, "Enter Agent ID to delete")
+
+        if not all([project_id, app_id, agent_id]):
+            print("Missing required parameters for delete action.")
+            return
+
+        # Confirmation prompt before deleting
+        confirmation = input(f"Are you sure you want to delete agent '{agent_id}'? (yes/no): ")
+        if confirmation.lower() == "yes":
+            result = delete_agent(project_id, app_id, agent_id)
+            print(json.dumps(result, indent=2))
+        else:
+            print("Deletion cancelled.")
 
     else:
         print(f"Invalid action: {action}")
