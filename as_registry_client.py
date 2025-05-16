@@ -44,7 +44,7 @@ def get_parameter(name, config, args, prompt=None):
 def main():
     parser = argparse.ArgumentParser(description="Agent Registry Client")
     parser.add_argument(
-        "action",
+        "action", nargs='?',
         choices=["create", "list", "get", "update", "get_by_name"],
         help="Action to perform",
     )
@@ -63,6 +63,10 @@ def main():
     config = load_config(args.config)
 
     action = args.action
+    if not action:
+        action = input(
+            "Enter action to perform (create, list, get, update, get_by_name): "
+        )
 
     if action == "create":
         project_id = get_parameter(
@@ -91,7 +95,6 @@ def main():
                 description,
                 tool_description,
                 adk_deployment_id,
-                auth_id,
             ]
         ):
             print("Missing required parameters for create action.")

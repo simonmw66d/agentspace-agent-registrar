@@ -22,9 +22,8 @@ def create_agent(project_id, app_id, display_name, description, tool_description
             "provisioned_reasoning_engine": {
                 "reasoning_engine": f"projects/{project_id}/locations/global/reasoningEngines/{adk_deployment_id}"
             },
-            "authorizations": [
-                f"projects/{project_id}/locations/global/authorizations/{auth_id}"
-            ]
+            **({"authorizations": [f"projects/{project_id}/locations/global/authorizations/{auth_id}"]} if auth_id else {})
+
         }
     }
 
@@ -38,14 +37,14 @@ def create_agent(project_id, app_id, display_name, description, tool_description
         "-H", "Content-Type: application/json",
         "-H", f"X-Goog-User-Project: {project_id}",
         url,
-        "-d", json.dumps(data)
+        "-d", json.dumps(data,  separators=(',', ':'))
     ]
 
     # Execute the command
     result = subprocess.run(command, capture_output=True, text=True)
 
     # Print the output
-    _check_required_params(locals(), ["project_id", "app_id", "display_name", "description", "tool_description", "adk_deployment_id", "auth_id"])
+    _check_required_params(locals(), ["project_id", "app_id", "display_name", "description", "tool_description", "adk_deployment_id"])
 
 
 
@@ -120,8 +119,6 @@ def get_agent(project_id, app_id, agent_id):
 
 def update_agent(project_id, app_id, agent_id, display_name, description, tool_description, adk_deployment_id, auth_id):
 
-    _check_required_params(locals(), ["project_id", "app_id", "agent_id", "display_name", "description", "tool_description", "adk_deployment_id", "auth_id"])
-
     # First get the agent
     get_result = get_agent(project_id, app_id, agent_id)
     if "agent_details" not in get_result:
@@ -136,22 +133,25 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     }
 
     #Handle adk_agent_definition.
-    existing_adk = existing_agent.get("adk_agent_definition", {})
+    existing_adk = existing_agent.get("adkAgentDefinition", {})
     updated_adk = {}
 
     #Tool settings
-    existing_tool = existing_adk.get("tool_settings", {})
+    existing_tool = existing_adk.get("toolSettings", {})
     updated_adk["tool_settings"] = {
-        "tool_description": tool_description or existing_tool.get("tool_description",""),
+        "tool_description": tool_description or existing_tool.get("toolDescription", "")
     }
 
     #Reasoning engine
-    existing_reasoning = existing_adk.get("provisioned_reasoning_engine", {}).get("reasoning_engine","")
-    updated_adk["provisioned_reasoning_engine"] = {"reasoning_engine": adk_deployment_id or existing_reasoning}
+    existing_reasoning = existing_adk.get("provisionedReasoningEngine", {}).get("reasoningEngine","")
+    updated_adk["provisionedReasoningEngine"] = {
+        "reasoning_engine": adk_deployment_id or existing_reasoning
+    }
+
 
     #Authorizations
     existing_auths = existing_adk.get("authorizations", [])
-    updated_adk["authorizations"] = auth_id or existing_auths
+    updated_adk["authorizations"] = [auth_id] if auth_id else existing_auths
 
     updated_data["adk_agent_definition"] = updated_adk
 
@@ -162,13 +162,14 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
 
     # Prepare the curl command
+    logging.debug(f"Updated Data: {json.dumps(updated_data, indent=2)}")
     command = [
         "curl", "-X", "PATCH",
         "-H", f"Authorization: Bearer {access_token}",
         "-H", "Content-Type: application/json",
         "-H", f"X-Goog-User-Project: {project_id}",
         url,
-        "-d", json.dumps(updated_data)
+        "-d", json.dumps(updated_data, indent=2)
     ]
 
     # Execute the command
@@ -176,7 +177,6 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
 
     # Return results as JSON
     return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
-
 def get_agent_by_display_name(project_id, app_id, display_name):
     _check_required_params(locals(), ["project_id", "app_id", "display_name"])
 
