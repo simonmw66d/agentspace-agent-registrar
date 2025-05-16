@@ -84,6 +84,7 @@ The following options can be used to provide parameters:
 *   `--tool_description <tool_description>`: A description of the tool used by the agent.
 *   `--adk_deployment_id <adk_deployment_id>`: The Reasoning Engine ID (obtained after deploying the agent to Agent Engine).
 *   `--auth_id <auth_id>`: The authorization ID.
+*   `--icon_uri <icon_uri>`: URI for the agent's icon (optional).
 *   `--agent_id <agent_id>`: The ID of the agent (required for `get` and `update` actions).
 
 ### Examples

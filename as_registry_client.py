@@ -88,9 +88,12 @@ def main():
         )
         auth_id = get_parameter("auth_id", config, args, "Enter authorization ID")
 
-        if not all(
-            icon_uri = get_parameter("icon_uri", config, args, "Enter icon URI")
-            [
+        icon_uri = get_parameter("icon_uri", config, args, "Enter icon URI")
+        if icon_uri and not isinstance(icon_uri, str):
+            print(f"Error: icon_uri must be a string, but got {type(icon_uri)}. Check your configuration.")
+            return
+
+        if not all([
                 project_id,
                 app_id,
                 display_name,

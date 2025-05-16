@@ -24,11 +24,58 @@ def create_agent(project_id, app_id, display_name, description, tool_description
     Returns:
         dict: A dictionary containing the status code, stdout, and stderr of the curl command.
     """
+  
+    
     _check_required_params(locals(), ["project_id", "app_id", "display_name", "description", "tool_description", "adk_deployment_id"])
+    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
 
+    # Construct the URL
+    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents"
 
+    # Prepare the request body
+    data = {
+        "displayName": display_name,
+        "description": description,
+        "adk_agent_definition": {
+            "tool_settings": {
+                "tool_description": tool_description
+            },
+            "provisioned_reasoning_engine": {
+                "reasoning_engine": f"projects/{project_id}/locations/global/reasoningEngines/{adk_deployment_id}"
+            },
+            "authorizations": [f"projects/{project_id}/locations/global/authorizations/{auth_id}"] if auth_id else [],
+        }
 
-    logging.debug(f"Create Agent Result: {result.returncode}, {result.stdout}, {result.stderr}")
+    }
+
+    if icon_uri:
+        data["icon"] = {"uri": icon_uri}
+
+    # Prepare the curl command
+    command = [
+        "curl", "-X", "POST",
+        "-H", f"Authorization: Bearer {access_token}",
+        "-H", "Content-Type: application/json",
+        "-H", f"X-Goog-User-Project: {project_id}",
+        url,
+        "-d", json.dumps(data)
+    ]
+
+    logging.info(f"Create Agent Command: {command}")
+
+    # Execute the command
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        try:
+            agent_data = json.loads(result.stdout)
+            logging.debug(f"Create Agent Response: {agent_data}")
+            return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "agent": agent_data}
+        except json.JSONDecodeError:
+            return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "error": "Could not decode JSON response."}
+    else:
+        logging.error(f"Create Agent Error: {result.returncode}, {result.stderr}")
+
     return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
 
 
