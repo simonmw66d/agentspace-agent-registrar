@@ -48,6 +48,7 @@ def main():
         choices=["create", "list", "get", "update", "get_by_name"],
         help="Action to perform",
     )
+    parser.add_argument("--icon_uri", help="Icon URI for the agent")
     parser.add_argument("--config", help="Path to the config file", default=DEFAULT_CONFIG_FILE)
     parser.add_argument("--project_id", help="Google Cloud Project ID")
     parser.add_argument("--app_id", help="App ID")
@@ -88,6 +89,7 @@ def main():
         auth_id = get_parameter("auth_id", config, args, "Enter authorization ID")
 
         if not all(
+            icon_uri = get_parameter("icon_uri", config, args, "Enter icon URI")
             [
                 project_id,
                 app_id,
@@ -108,6 +110,7 @@ def main():
             tool_description,
             adk_deployment_id,
             auth_id,
+            icon_uri
         )
         print(json.dumps(result, indent=2))
 
@@ -159,6 +162,9 @@ def main():
         auth_id = get_parameter(
             "auth_id", config, args, "Enter new authorization ID (leave blank to keep current)"
         )
+        icon_uri = get_parameter(
+            "icon_uri", config, args, "Enter new icon URI (leave blank to keep current)"
+        )
 
         if not all([project_id, app_id, agent_id]):
             print("Missing required parameters for update action.")
@@ -173,6 +179,7 @@ def main():
             tool_description,
             adk_deployment_id,
             auth_id,
+            icon_uri
         )
         print(json.dumps(result, indent=2))
 
