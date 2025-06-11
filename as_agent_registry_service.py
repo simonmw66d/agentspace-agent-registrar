@@ -1,6 +1,31 @@
 import subprocess
 import json
 import logging
+import google.auth
+import google.auth.transport.requests
+
+# Scopes define the level of access you are requesting.
+# For this example, we are using the default cloud-platform scope.
+# You may need to specify more granular scopes depending on your needs.
+SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+
+def get_access_token():
+    """Gets the access token from the environment."""
+    try:
+        # google.auth.default() automatically finds the credentials
+        # from the environment (e.g., a service account key).
+        credentials, project_id = google.auth.default(scopes=SCOPES)
+
+        # Refresh the credentials to get an access token.
+        # Provide a transport object for refreshing.
+        credentials.refresh(google.auth.transport.requests.Request())
+
+        return credentials.token
+    except Exception as e:
+        print(f"An error occurred in get_access_token: {e}")
+        import traceback
+        traceback.print_exc() # This will print the full stack trace
+        return None
 
 def _check_required_params(params, required):
     missing = [param for param in required if not params.get(param)]
@@ -27,7 +52,15 @@ def create_agent(project_id, app_id, display_name, description, tool_description
   
     
     _check_required_params(locals(), ["project_id", "app_id", "display_name", "description", "tool_description", "adk_deployment_id"])
-    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    access_token = get_access_token()
+    if not access_token:
+        logging.error("Failed to obtain access token for create_agent.")
+        return {
+            "status_code": 401, # Unauthorized
+            "stdout": "",
+            "stderr": "Failed to obtain access token.",
+            "error": "Authentication failed: Could not retrieve access token."
+        }
 
     # Construct the URL
     url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents"
@@ -90,7 +123,18 @@ def list_agents(project_id, app_id):
     Returns:
         dict: A dictionary containing a list of agents or an error message.
     """
-    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    _check_required_params(locals(), ["project_id", "app_id"])
+
+    access_token=get_access_token()
+    if not access_token:
+        logging.error(f"Failed to obtain access token for list_agents (project_id: {project_id}, app_id: {app_id}).")
+        return {
+            "status_code": 401, # Unauthorized
+            "stdout": "",
+            "stderr": "Failed to obtain access token.",
+            "error": "Authentication failed: Could not retrieve access token."
+        }
+
 
     # Construct the URL
     url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents"
@@ -108,7 +152,6 @@ def list_agents(project_id, app_id):
     # Execute the command
     result = subprocess.run(command, capture_output=True, text=True)
 
-    _check_required_params(locals(), ["project_id", "app_id"])
     # Return the output as a list of agents
     if result.returncode == 0:
         try:
@@ -135,8 +178,19 @@ def get_agent(project_id, app_id, agent_id):
     Returns:
         dict: A dictionary containing the agent details or an error message.
     """
-    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    _check_required_params(locals(), ["project_id", "app_id", "agent_id"])
 
+    access_token=get_access_token()
+    if not access_token:
+        logging.error(f"Failed to obtain access token for get_agent (project_id: {project_id}, app_id: {app_id}, agent_id: {agent_id}).")
+        return {
+            "status_code": 401, # Unauthorized
+            "stdout": "",
+            "stderr": "Failed to obtain access token.",
+            "error": "Authentication failed: Could not retrieve access token."
+        }
+
+    
     # Construct the URL
     url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"
 
@@ -153,7 +207,6 @@ def get_agent(project_id, app_id, agent_id):
     # Execute the command
     result = subprocess.run(command, capture_output=True, text=True)
 
-    _check_required_params(locals(), ["project_id", "app_id", "agent_id"])
     if result.returncode == 0:
         try:
             agent_data = json.loads(result.stdout)
@@ -183,6 +236,7 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     Returns:    
         dict: A dictionary containing the status code, stdout, stderr, and optionally the updated agent details or an error message.
     """
+    _check_required_params(locals(), ["project_id", "app_id", "agent_id"]) # Check primary IDs first
 
     # First get the agent
     get_result = get_agent(project_id, app_id, agent_id)
@@ -230,7 +284,18 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"    
 
     # Get access token
-    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    #access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    access_token=get_access_token()
+    if not access_token:
+        logging.error(f"Failed to obtain access token for update_agent (project_id: {project_id}, app_id: {app_id}, agent_id: {agent_id}).")
+        return {
+            "status_code": 401, # Unauthorized
+            "stdout": "",
+            "stderr": "Failed to obtain access token.",
+            "error": "Authentication failed: Could not retrieve access token."
+        }
+
+
 
     # Prepare the curl command
     logging.debug(f"Updated Data: {json.dumps(updated_data, indent=2)}")
@@ -297,7 +362,17 @@ def delete_agent(project_id, app_id, agent_id):
     """
     _check_required_params(locals(), ["project_id", "app_id", "agent_id"])
 
-    access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    #access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
+    access_token=get_access_token()
+    if not access_token:
+        logging.error(f"Failed to obtain access token for delete_agent (project_id: {project_id}, app_id: {app_id}, agent_id: {agent_id}).")
+        return {
+            "status_code": 401, # Unauthorized
+            "stdout": "",
+            "stderr": "Failed to obtain access token.",
+            "error": "Authentication failed: Could not retrieve access token."
+        }
+
 
     # Construct the URL
     url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"
