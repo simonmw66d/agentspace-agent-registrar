@@ -27,12 +27,26 @@ def get_access_token():
         traceback.print_exc() # This will print the full stack trace
         return None
 
+
+# --- Constants for URL construction ---
+BASE_API_URL = "https://discoveryengine.googleapis.com/v1alpha"
+DEFAULT_LOCATION = "global"
+DEFAULT_COLLECTION = "default_collection"
+DEFAULT_ASSISTANT = "default_assistant"
+
 def _check_required_params(params, required):
     missing = [param for param in required if not params.get(param)]
     if missing:
         raise ValueError(f"Missing required parameters: {', '.join(missing)}")
 
-def create_agent(project_id, app_id, display_name, description, tool_description, adk_deployment_id, auth_id, icon_uri=None):
+def _build_discovery_engine_url(project_id: str, app_id: str, agent_id: str = None, api_location: str = DEFAULT_LOCATION) -> str:
+    """Helper function to construct the Discovery Engine API URL for agents."""
+    base_path = f"{BASE_API_URL}/projects/{project_id}/locations/{api_location}/collections/{DEFAULT_COLLECTION}/engines/{app_id}/assistants/{DEFAULT_ASSISTANT}/agents"
+    if agent_id:
+        return f"{base_path}/{agent_id}"
+    return base_path
+
+def create_agent(project_id, app_id, display_name, description, tool_description, adk_deployment_id, auth_id, icon_uri=None, re_location="global", api_location="global"):
     """
     Creates a new agent in the Agent Registry.
 
@@ -45,6 +59,8 @@ def create_agent(project_id, app_id, display_name, description, tool_description
         adk_deployment_id (str): Reasoning Engine ID.
         auth_id (str): Authorization ID.
         icon_uri (str, optional): Icon URI for the agent. Defaults to None.
+        re_location (str, optional): Location of the Reasoning Engine and Authorizations. Defaults to "global".
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
 
     Returns:
         dict: A dictionary containing the status code, stdout, and stderr of the curl command.
@@ -62,8 +78,7 @@ def create_agent(project_id, app_id, display_name, description, tool_description
             "error": "Authentication failed: Could not retrieve access token."
         }
 
-    # Construct the URL
-    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents"
+    url = _build_discovery_engine_url(project_id, app_id, api_location=api_location)
 
     # Prepare the request body
     data = {
@@ -74,9 +89,9 @@ def create_agent(project_id, app_id, display_name, description, tool_description
                 "tool_description": tool_description
             },
             "provisioned_reasoning_engine": {
-                "reasoning_engine": f"projects/{project_id}/locations/global/reasoningEngines/{adk_deployment_id}"
+                "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/{adk_deployment_id}"
             },
-            "authorizations": [f"projects/{project_id}/locations/global/authorizations/{auth_id}"] if auth_id else [],
+            "authorizations": [f"projects/{project_id}/locations/{re_location}/authorizations/{auth_id}"] if auth_id else [],
         }
 
     }
@@ -112,13 +127,14 @@ def create_agent(project_id, app_id, display_name, description, tool_description
     return {"status_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
 
 
-def list_agents(project_id, app_id):
+def list_agents(project_id, app_id, api_location="global"):
     """
     Lists agents in the Agent Registry for a given project and app.
 
     Args:
         project_id (str): Google Cloud Project ID.
         app_id (str): App ID for the Discovery Engine.
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
 
     Returns:
         dict: A dictionary containing a list of agents or an error message.
@@ -136,8 +152,7 @@ def list_agents(project_id, app_id):
         }
 
 
-    # Construct the URL
-    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents"
+    url = _build_discovery_engine_url(project_id, app_id, api_location=api_location)
 
     # Prepare the curl command
     command = [
@@ -166,7 +181,7 @@ def list_agents(project_id, app_id):
     else:
         return {"error": "Error during agent listing", "stderr": result.stderr}
 
-def get_agent(project_id, app_id, agent_id):
+def get_agent(project_id, app_id, agent_id, api_location="global"):
     """
     Retrieves details for a specific agent from the Agent Registry.
 
@@ -174,6 +189,7 @@ def get_agent(project_id, app_id, agent_id):
         project_id (str): Google Cloud Project ID.
         app_id (str): App ID for the Discovery Engine.
         agent_id (str): ID of the agent to retrieve.
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
 
     Returns:
         dict: A dictionary containing the agent details or an error message.
@@ -191,8 +207,7 @@ def get_agent(project_id, app_id, agent_id):
         }
 
     
-    # Construct the URL
-    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"
+    url = _build_discovery_engine_url(project_id, app_id, agent_id, api_location=api_location)
 
     # Prepare the curl command
     command = [
@@ -218,7 +233,7 @@ def get_agent(project_id, app_id, agent_id):
         return {"error": f"Error: {result.returncode} - {result.stderr}"}
 
 
-def update_agent(project_id, app_id, agent_id, display_name, description, tool_description, adk_deployment_id, auth_id, icon_uri=None):
+def update_agent(project_id, app_id, agent_id, display_name, description, tool_description, adk_deployment_id, auth_id, icon_uri=None, re_location="global", api_location="global"):
     """
     Updates an existing agent in the Agent Registry.
 
@@ -232,6 +247,8 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
         adk_deployment_id (str): New Reasoning Engine ID (leave blank to keep current).
         auth_id (str, optional): New Authorization ID (leave blank to keep current). Defaults to None.
         icon_uri (str, optional): New icon URI (leave blank to keep current). Defaults to None.
+        re_location (str, optional): Location of the Reasoning Engine and Authorizations if they are being updated. Defaults to "global".
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
     
     Returns:    
         dict: A dictionary containing the status code, stdout, stderr, and optionally the updated agent details or an error message.
@@ -239,7 +256,7 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     _check_required_params(locals(), ["project_id", "app_id", "agent_id"]) # Check primary IDs first
 
     # First get the agent
-    get_result = get_agent(project_id, app_id, agent_id)
+    get_result = get_agent(project_id, app_id, agent_id, api_location=api_location)
     if "agent_details" not in get_result:
         return {"error": f"Could not retrieve agent details: {get_result.get('error', '')}"}
     
@@ -262,15 +279,21 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
     }
 
     #Reasoning engine
-    existing_reasoning = existing_adk.get("provisionedReasoningEngine", {}).get("reasoningEngine","")
-    updated_adk["provisionedReasoningEngine"] = {
-        "reasoning_engine": adk_deployment_id or existing_reasoning
-    }
-
+    existing_reasoning_engine_info = existing_adk.get("provisionedReasoningEngine", {})
+    if adk_deployment_id: # If a new ADK deployment ID is provided, update it with the new re_location
+        updated_adk["provisionedReasoningEngine"] = {
+            "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/{adk_deployment_id}"
+        }
+    elif existing_reasoning_engine_info: # Otherwise, keep the existing one
+        updated_adk["provisionedReasoningEngine"] = existing_reasoning_engine_info
 
     #Authorizations
     existing_auths = existing_adk.get("authorizations", [])
-    updated_adk["authorizations"] = [auth_id] if auth_id else existing_auths
+    if auth_id: # If a new auth ID is provided, update it with the new re_location
+        updated_adk["authorizations"] = [f"projects/{project_id}/locations/{re_location}/authorizations/{auth_id}"]
+    else: # Otherwise, keep the existing ones
+        updated_adk["authorizations"] = existing_auths
+
 
     existing_icon = existing_agent.get("icon")
     if icon_uri:  # If new icon URI is provided
@@ -280,8 +303,7 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
 
     updated_data["adk_agent_definition"] = updated_adk
 
-    # Construct the URL
-    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"    
+    url = _build_discovery_engine_url(project_id, app_id, agent_id, api_location=api_location)
 
     # Get access token
     #access_token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True).stdout.strip()
@@ -321,7 +343,7 @@ def update_agent(project_id, app_id, agent_id, display_name, description, tool_d
             response["error"] = "Could not decode JSON response for updated agent."
     return response
 
-def get_agent_by_display_name(project_id, app_id, display_name):
+def get_agent_by_display_name(project_id, app_id, display_name, api_location="global"):
     """
     Retrieves an agent from the Agent Registry by its display name.
 
@@ -329,13 +351,13 @@ def get_agent_by_display_name(project_id, app_id, display_name):
         project_id (str): Google Cloud Project ID.
         app_id (str): App ID for the Discovery Engine.
         display_name (str): Display name of the agent to retrieve.
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
 
     Returns:
         dict: A dictionary containing the agent details or a message indicating the agent was not found.
     """
     _check_required_params(locals(), ["project_id", "app_id", "display_name"])
-
-    list_result = list_agents(project_id, app_id)
+    list_result = list_agents(project_id, app_id, api_location=api_location)
     if "error" in list_result:
         return list_result
 
@@ -347,7 +369,7 @@ def get_agent_by_display_name(project_id, app_id, display_name):
     return {"message": f"Agent with display name '{display_name}' not found."}
 
 
-def delete_agent(project_id, app_id, agent_id):
+def delete_agent(project_id, app_id, agent_id, api_location="global"):
     """
     Deletes an agent from the Agent Registry.
 
@@ -355,6 +377,7 @@ def delete_agent(project_id, app_id, agent_id):
         project_id (str): Google Cloud Project ID.
         app_id (str): App ID for the Discovery Engine.
         agent_id (str): ID of the agent to delete.
+        api_location (str, optional): API location for the Discovery Engine service. Defaults to "global".
 
     Returns:
         dict: A dictionary containing the status code, stdout, and stderr of the curl command,
@@ -374,8 +397,7 @@ def delete_agent(project_id, app_id, agent_id):
         }
 
 
-    # Construct the URL
-    url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/global/collections/default_collection/engines/{app_id}/assistants/default_assistant/agents/{agent_id}"
+    url = _build_discovery_engine_url(project_id, app_id, agent_id, api_location=api_location)
 
     # Prepare the curl command
     command = [

@@ -58,6 +58,8 @@ def main():
     parser.add_argument("--tool_description", help="Tool description")
     parser.add_argument("--adk_deployment_id", help="ADK deployment ID")
     parser.add_argument("--auth_id", help="Authorization ID")
+    parser.add_argument("--api_location", help="API location (default: global)")
+    parser.add_argument("--re_location", help="Reasoning Engine location (default: global)")
     parser.add_argument("--agent_resource_name", help="Full Agent Resource Name (for delete)")
 
     args = parser.parse_args()
@@ -89,6 +91,12 @@ def main():
         )
         auth_id = get_parameter("auth_id", config, args, "Enter authorization ID")
 
+        re_location = get_parameter(
+            "re_location", config, args, "Enter Reasoning Engine location (default: global)"
+        )
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
         icon_uri = get_parameter("icon_uri", config, args, "Enter icon URI")
         if icon_uri and not isinstance(icon_uri, str):
             print(f"Error: icon_uri must be a string, but got {type(icon_uri)}. Check your configuration.")
@@ -114,7 +122,9 @@ def main():
             tool_description,
             adk_deployment_id,
             auth_id,
-            icon_uri
+            icon_uri,
+            re_location=re_location if re_location else "global",
+            api_location=api_location if api_location else "global"
         )
         print(json.dumps(result, indent=2))
 
@@ -123,12 +133,15 @@ def main():
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
         app_id = get_parameter("app_id", config, args, "Enter App ID")
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
 
         if not all([project_id, app_id]):
             print("Missing required parameters for list action.")
             return
 
-        result = list_agents(project_id, app_id)
+        result = list_agents(project_id, app_id, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
     elif action == "get":
@@ -138,11 +151,14 @@ def main():
         app_id = get_parameter("app_id", config, args, "Enter App ID")
         agent_id = get_parameter("agent_id", config, args, "Enter Agent ID")
 
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
         if not all([project_id, app_id, agent_id]):
             print("Missing required parameters for get action.")
             return
 
-        result = get_agent(project_id, app_id, agent_id)
+        result = get_agent(project_id, app_id, agent_id, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
     elif action == "update":
@@ -166,6 +182,12 @@ def main():
         auth_id = get_parameter(
             "auth_id", config, args, "Enter new authorization ID (leave blank to keep current)"
         )
+        re_location = get_parameter(
+            "re_location", config, args, "Enter new Reasoning Engine location (default: global, leave blank to keep current if not updating ADK/Auth ID)"
+        )
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
         icon_uri = get_parameter(
             "icon_uri", config, args, "Enter new icon URI (leave blank to keep current)"
         )
@@ -183,7 +205,9 @@ def main():
             tool_description,
             adk_deployment_id,
             auth_id,
-            icon_uri
+            icon_uri,
+            re_location=re_location if re_location else "global",
+            api_location=api_location if api_location else "global"
         )
         print(json.dumps(result, indent=2))
 
@@ -195,12 +219,15 @@ def main():
         display_name = get_parameter(
             "display_name", config, args, "Enter agent display name"
         )
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
 
         if not all([project_id, app_id, display_name]):
             print("Missing required parameters for get_by_name action.")
             return
 
-        result = get_agent_by_display_name(project_id, app_id, display_name)
+        result = get_agent_by_display_name(project_id, app_id, display_name, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
     elif action == "delete":
@@ -209,6 +236,9 @@ def main():
         )
         app_id = get_parameter("app_id", config, args, "Enter App ID")
         agent_id = get_parameter("agent_id", config, args, "Enter Agent ID to delete")
+        api_location = get_parameter(
+            "api_location", config, args, "Enter API location (default: global)"
+        )
 
         if not all([project_id, app_id, agent_id]):
             print("Missing required parameters for delete action.")
@@ -217,7 +247,7 @@ def main():
         # Confirmation prompt before deleting
         confirmation = input(f"Are you sure you want to delete agent '{agent_id}'? (yes/no): ")
         if confirmation.lower() == "yes":
-            result = delete_agent(project_id, app_id, agent_id)
+            result = delete_agent(project_id, app_id, agent_id, api_location=api_location if api_location else "global")
             print(json.dumps(result, indent=2))
         else:
             print("Deletion cancelled.")
