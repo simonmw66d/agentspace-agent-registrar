@@ -85,8 +85,10 @@ The following options can be used to provide parameters:
 *   `--tool_description <tool_description>`: A description of the tool used by the agent.
 *   `--adk_deployment_id <adk_deployment_id>`: The Reasoning Engine ID (obtained after deploying the agent to Agent Engine). As an example in this `"reasoningEngine": "projects/121968733999/locations/global/reasoningEngines/825011952831955555"` the adk_deployment_id is `825011952831955555`. 
 *   `--auth_id <auth_id>`: The authorization ID. This is an optional field and is needed if the agent wants to act on behalf of the end user, such as accessing BigQuery tables only the user has access to. In this case, the administrator can configure OAuth 2.0 authorizations for your agents.
+*   `--re_location <re_location>`: The location of the Reasoning Engine and Authorizations (e.g., "us-central1"). Defaults to "global" if not specified.
+*   `--api_location <api_location>`: The API location for the Discovery Engine service (e.g., "us-central1"). Defaults to "global" if not specified. This determines the regional endpoint used for API calls.
 *   `--icon_uri <icon_uri>`: URI for the agent's icon (optional).
-*   `--agent_id <agent_id>`: The ID of the agent (required for `get`, `update`, and `delete` actions). ID is assigned to the agent during registration (`create` action)
+*   `--agent_id <agent_id>`: The ID of the agent (required for `get`, `update`, and `delete` actions). The ID is assigned to the agent during registration (`create` action).
 
 ### Examples
 
@@ -101,7 +103,7 @@ The client will prompt you for each required parameter.
 **2. List agents (using command-line arguments):**
 
 ```bash
-python as_registry_client.py list --project_id your-project-id --app_id your-app-id
+python as_registry_client.py list --project_id your-project-id --app_id your-app-id --api_location global
 ```
 
 **3. Get an agent by ID (using a configuration file and command-line argument):**
