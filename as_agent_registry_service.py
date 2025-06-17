@@ -29,7 +29,7 @@ def get_access_token():
 
 
 # --- Constants for URL construction ---
-BASE_API_URL = "https://discoveryengine.googleapis.com/v1alpha"
+BASE_API_URL = "https://{location_prefix}discoveryengine.googleapis.com/v1alpha"
 DEFAULT_LOCATION = "global"
 DEFAULT_COLLECTION = "default_collection"
 DEFAULT_ASSISTANT = "default_assistant"
@@ -41,7 +41,11 @@ def _check_required_params(params, required):
 
 def _build_discovery_engine_url(project_id: str, app_id: str, agent_id: str = None, api_location: str = DEFAULT_LOCATION) -> str:
     """Helper function to construct the Discovery Engine API URL for agents."""
-    base_path = f"{BASE_API_URL}/projects/{project_id}/locations/{api_location}/collections/{DEFAULT_COLLECTION}/engines/{app_id}/assistants/{DEFAULT_ASSISTANT}/agents"
+    location_prefix = ""
+    if api_location != "global":
+        location_prefix = api_location + "-"
+    url = BASE_API_URL.format(location_prefix=location_prefix)
+    base_path = f"{url}/projects/{project_id}/locations/{api_location}/collections/{DEFAULT_COLLECTION}/engines/{app_id}/assistants/{DEFAULT_ASSISTANT}/agents"
     if agent_id:
         return f"{base_path}/{agent_id}"
     return base_path
@@ -91,7 +95,7 @@ def create_agent(project_id, app_id, display_name, description, tool_description
             "provisioned_reasoning_engine": {
                 "reasoning_engine": f"projects/{project_id}/locations/{re_location}/reasoningEngines/{adk_deployment_id}"
             },
-            "authorizations": [f"projects/{project_id}/locations/{re_location}/authorizations/{auth_id}"] if auth_id else [],
+            "authorizations": [f"projects/{project_id}/locations/{api_location}/authorizations/{auth_id}"] if auth_id else [],
         }
 
     }
