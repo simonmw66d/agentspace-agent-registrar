@@ -66,12 +66,12 @@ If you don't provide the `action` on the command line, the client will prompt yo
 
 The following actions are supported:
 
-*   **`create`:** Creates a new agent.
-*   **`list`:** Lists existing agents.
-*   **`get`:** Retrieves details for a specific agent.
-*   **`update`:** Updates an existing agent.
-*   **`get_by_name`:** Retrieves an agent by its display name.
-*   **`delete`:** Deletes an existing agent.
+*   **`register_agent`:** Registers a new agent in Agentspace.
+*   **`list_registry`:** Lists registered agents from Agentspace.
+*   **`get_registered_agent`:** Retrieves details for a specific registered agent in Agentspace.
+*   **`update_registered_agent`:** Updates an agent registration in Agentspace.
+*   **`get_registered_agents_by_name`:** Retrieves matching registered agents by display name.
+*   **`unregister_agent`:** Unregisters an existing agent from Agentspace.
 
 ### Options
 
@@ -85,17 +85,17 @@ The following options can be used to provide parameters:
 *   `--tool_description <tool_description>`: A description of the tool used by the agent.
 *   `--adk_deployment_id <adk_deployment_id>`: The Reasoning Engine ID (obtained after deploying the agent to Agent Engine). As an example in this `"reasoningEngine": "projects/121968733999/locations/global/reasoningEngines/825011952831955555"` the adk_deployment_id is `825011952831955555`. 
 *   `--auth_id <auth_id>`: The authorization ID. This is an optional field and is needed if the agent wants to act on behalf of the end user, such as accessing BigQuery tables only the user has access to. In this case, the administrator can configure OAuth 2.0 authorizations for your agents.
-*   `--re_location <re_location>`: The location of the Reasoning Engine and Authorizations (e.g., "us-central1"). Defaults to "global" if not specified.
-*   `--api_location <api_location>`: The API location for the Discovery Engine service (e.g., "us-central1"). Defaults to "global" if not specified. This determines the regional endpoint used for API calls.
+*   `--re_location <re_location>`: The location of the Reasoning Engine and Authorizations (e.g., "us-central1"). Defaults to "global" if not specified. [Documentation](https://cloud.google.com/generative-ai-app-builder/docs/locations)
+*   `--api_location <api_location>`: The API location for the Discovery Engine service (e.g., "us-central1"). Defaults to "global" if not specified. This determines the regional endpoint used for API calls. Refer docs for API location values
 *   `--icon_uri <icon_uri>`: URI for the agent's icon (optional).
-*   `--agent_id <agent_id>`: The ID of the agent (required for `get`, `update`, and `delete` actions). The ID is assigned to the agent during registration (`create` action).
+*   `--agent_id <agent_id>`: The ID of the agent (required for `get_registered_agent`, `update_registered_agent`, and `unregister_agent` actions). The ID is assigned to the agent during registration (`register_agent` action).
 
 ### Examples
 
 **1. Create an agent (using interactive input):**
 
 ```bash
-python as_registry_client.py create
+python as_registry_client.py register_agent
 ```
 
 The client will prompt you for each required parameter.
@@ -103,13 +103,13 @@ The client will prompt you for each required parameter.
 **2. List agents (using command-line arguments):**
 
 ```bash
-python as_registry_client.py list --project_id your-project-id --app_id your-app-id --api_location global
+python as_registry_client.py list_registry --project_id your-project-id --app_id your-app-id --api_location global
 ```
 
 **3. Get an agent by ID (using a configuration file and command-line argument):**
 
 ```bash
-python as_registry_client.py get --agent_id your-agent-id --config my_config.json
+python as_registry_client.py get_registered_agent --agent_id your-agent-id --config my_config.json
 ```
 
 This will load `project_id` and `app_id` from `my_config.json` and use the provided `agent_id`.
@@ -117,19 +117,19 @@ This will load `project_id` and `app_id` from `my_config.json` and use the provi
 **4. Update an agent (partially, using a configuration file and command-line argument):**
 
 ```bash
-python as_registry_client.py update --agent_id your-agent-id --display_name "New Agent Name"
+python as_registry_client.py update_registered_agent --agent_id your-agent-id --display_name "New Agent Name"
 ```
 
 **5. Get an agent by display name (using a configuration file and command-line argument):**
 
 ```bash
-python as_registry_client.py get_by_name --display_name "Agent Name"  --config my_config.json   
+python as_registry_client.py get_registered_agents_by_name --display_name "Agent Name"  --config my_config.json   
 ```
 
 **6. Delete an agent (using a configuration file and command-line argument):**
 
 ```bash
-python as_registry_client.py delete --agent_id your-agent-id --config my_config.json
+python as_registry_client.py unregister_agent --agent_id your-agent-id --config my_config.json
 ```
 
 This will update only the `display_name` of the agent with the specified ID, using other parameters from `config.json` or prompting the user if not found.

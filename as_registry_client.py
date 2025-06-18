@@ -46,7 +46,7 @@ def main():
     parser = argparse.ArgumentParser(description="Agent Registry Client")
     parser.add_argument(
         "action", nargs='?',
-        choices=["create", "list", "get", "update", "get_by_name", "delete"],
+        choices=["register_agent", "list_registry", "get_registered_agent", "update_registered_agent", "get_registered_agents_by_name", "unregister_agent"],
         help="Action to perform",
     )
     parser.add_argument("--icon_uri", help="Icon URI for the agent")
@@ -69,10 +69,10 @@ def main():
     action = args.action
     if not action:
         action = input(
-            "Enter action to perform (create, list, get, update, get_by_name, delete): "
+            "Enter action to perform (register_agent, list_registry, get_registered_agent, update_registered_agent, get_registered_agents_by_name, unregister_agent): "
         )
 
-    if action == "create":
+    if action == "register_agent":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
@@ -111,7 +111,7 @@ def main():
                 adk_deployment_id,
             ]
         ):
-            print("Missing required parameters for create action.")
+            print("Missing required parameters for register_agent action.")
             return
 
         result = create_agent(
@@ -128,7 +128,7 @@ def main():
         )
         print(json.dumps(result, indent=2))
 
-    elif action == "list":
+    elif action == "list_registry":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
@@ -138,13 +138,13 @@ def main():
         )
 
         if not all([project_id, app_id]):
-            print("Missing required parameters for list action.")
+            print("Missing required parameters for list_registry action.")
             return
 
         result = list_agents(project_id, app_id, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
-    elif action == "get":
+    elif action == "get_registered_agent":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
@@ -155,13 +155,13 @@ def main():
             "api_location", config, args, "Enter API location (default: global)"
         )
         if not all([project_id, app_id, agent_id]):
-            print("Missing required parameters for get action.")
+            print("Missing required parameters for get_registered_agent action.")
             return
 
         result = get_agent(project_id, app_id, agent_id, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
-    elif action == "update":
+    elif action == "update_registered_agent":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
@@ -193,7 +193,7 @@ def main():
         )
 
         if not all([project_id, app_id, agent_id]):
-            print("Missing required parameters for update action.")
+            print("Missing required parameters for update_registered_agent action.")
             return
 
         result = update_agent(
@@ -211,7 +211,7 @@ def main():
         )
         print(json.dumps(result, indent=2))
 
-    elif action == "get_by_name":
+    elif action == "get_registered_agents_by_name":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
@@ -224,33 +224,33 @@ def main():
         )
 
         if not all([project_id, app_id, display_name]):
-            print("Missing required parameters for get_by_name action.")
+            print("Missing required parameters for get_registered_agents_by_name action.")
             return
 
         result = get_agent_by_display_name(project_id, app_id, display_name, api_location=api_location if api_location else "global")
         print(json.dumps(result, indent=2))
 
-    elif action == "delete":
+    elif action == "unregister_agent":
         project_id = get_parameter(
             "project_id", config, args, "Enter Google Cloud Project ID"
         )
         app_id = get_parameter("app_id", config, args, "Enter App ID")
-        agent_id = get_parameter("agent_id", config, args, "Enter Agent ID to delete")
+        agent_id = get_parameter("agent_id", config, args, "Enter Agent ID to unregister")
         api_location = get_parameter(
             "api_location", config, args, "Enter API location (default: global)"
         )
 
         if not all([project_id, app_id, agent_id]):
-            print("Missing required parameters for delete action.")
+            print("Missing required parameters for unregister_agent action.")
             return
 
         # Confirmation prompt before deleting
-        confirmation = input(f"Are you sure you want to delete agent '{agent_id}'? (yes/no): ")
+        confirmation = input(f"Are you sure you want to unregister agent '{agent_id}'? (yes/no): ")
         if confirmation.lower() == "yes":
             result = delete_agent(project_id, app_id, agent_id, api_location=api_location if api_location else "global")
             print(json.dumps(result, indent=2))
         else:
-            print("Deletion cancelled.")
+            print("Unregistering agent cancelled.")
 
     else:
         print(f"Invalid action: {action}")
