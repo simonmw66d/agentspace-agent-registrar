@@ -1,46 +1,72 @@
 import argparse
 import agent_engine_manager
+import os
+import json
+import logging
+from dotenv import load_dotenv
 
-def get_parameter(name, args, prompt=None, required=False):
+# Configure logging for the client
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def get_parameter(name, args, prompt=None, required=False, default=None):
     """
     Retrieves a parameter value.
-    Checks command-line arguments first, then prompts the user if necessary.
+    Checks command-line arguments first, then environment variables (if applicable for project_id),
+    then prompts the user if necessary.
     """
     value = getattr(args, name, None)
     if value is not None:
         return value
 
-    if prompt:
-        value = input(f"{prompt}: ")
-        if value:
-            return value
+    # For project_id, also check environment variable GOOGLE_CLOUD_PROJECT
+    if name == "project_id":
+        env_value = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if env_value:
+            return env_value
     
-    if required and not value:
+    if prompt:
+        user_input = input(f"{prompt}: ")
+        if user_input:
+            return user_input
+    
+    if required and not value and not default:
         raise ValueError(f"Parameter '{name}' is required.")
-    return None
+    return default if default is not None else None
 
 def main():
+    # Load environment variables from .env file if it exists
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Agent Engine Manager Client")
     parser.add_argument(
         "action", nargs='?', # Make action optional to allow prompting
-        choices=["list", "delete", "get", "list_by_name"],
+        choices=["list_deployed_agents", "undeploy_agent", "get_deployed_agent", "list_deployed_agents_by_name"],
         help="Action to perform: \n"
-             "  list: List all agents.\n"
-             "  delete: Delete an agent by resource name.\n"
-             "  get: Get an agent by resource ID.\n"
-             "  list_by_name: List agents by display name."
+             "  list_deployed_agents: List all deployed agents.\n"
+             "  undeploy_agent: Undeploy an agent by resource name.\n"
+             "  get_deployed_agent: Get a deployed agent by resource ID.\n"
+             "  list_deployed_agents_by_name: List deployed agents by display name."
     )
     parser.add_argument(
         "--resource_name",
-        help="Resource name of the agent (e.g., projects/PROJECT_ID/locations/LOCATION/agents/AGENT_ID). Required for 'delete'."
+        help="Resource name of the agent (e.g., projects/PROJECT_ID/locations/LOCATION/agents/AGENT_ID). Required for 'undeploy_agent'."
     )
     parser.add_argument(
         "--resource_id",
-        help="Resource ID of the agent. Required for 'get'."
+        help="Resource ID of the agent. Required for 'get_deployed_agent'."
     )
     parser.add_argument(
         "--display_name",
         help="Display name of the agent. Required for 'list_by_name'."
+    )
+    parser.add_argument(
+        "--project_id",
+        help="Google Cloud Project ID. Can also be set via GOOGLE_CLOUD_PROJECT env var or .env file."
+    )
+    parser.add_argument(
+        "--location",
+        help="Google Cloud Location/Region for Vertex AI. Defaults to None (SDK will use its default, often 'us-central1')."
     )
 
     args = parser.parse_args()
@@ -48,71 +74,78 @@ def main():
     action = args.action
     if not action:
         action = input(
-            "Enter action to perform (list, delete, get, list_by_name): "
+            "Enter action to perform (list_deployed_agents, undeploy_agent, get_deployed_agent, list_deployed_agents_by_name): "
         ).strip().lower()
-        if action not in ["list", "delete", "get", "list_by_name"]:
-            print(f"Invalid action: {action}")
+        if action not in ["list_deployed_agents", "undeploy_agent", "get_deployed_agent", "list_deployed_agents_by_name"]:
+            logger.error(f"Invalid action: {action}")
             parser.print_help()
             return
 
     try:
-        if action == "list":
+        # Get Project ID: CLI > Environment Variable (from .env or shell) > Prompt
+        project_id = get_parameter(
+            "project_id", args,
+            prompt="Enter Google Cloud Project ID",
+            required=True
+        )
+        
+        location = get_parameter(
+            "location", args,
+            prompt="Enter Google Cloud Location (optional, press Enter for default)",
+            required=False,
+            default=None # Pass None if not provided, so vertexai.init uses its default
+        )
+
+        # Initialize Vertex AI in the manager module
+        agent_engine_manager.initialize_vertex_ai(project_id, location)
+        logger.info(f"Client proceeding with action: {action}")
+
+
+        if action == "list_deployed_agents":
             result = agent_engine_manager.list_agents()
             print(result)
-        elif action == "delete":
+        elif action == "undeploy_agent":
             resource_name = get_parameter(
                 "resource_name", args, 
-                prompt="Enter resource name of the agent to delete (e.g., projects/PROJECT_ID/locations/LOCATION/agents/AGENT_ID)",
+                prompt="Enter resource name of the agent to undeploy (e.g., projects/PROJECT_ID/locations/LOCATION/agents/AGENT_ID)",
                 required=True
             )
-            if not resource_name: # Should be caught by required=True in get_parameter, but as a safeguard
-                print("Resource name is required for the 'delete' action.")
-                return
+            # No need for the 'if not resource_name' check here as get_parameter handles 'required'
             
-            confirmation = input(f"Are you sure you want to delete agent with resource name '{resource_name}'? (yes/no): ")
+            confirmation = input(f"Are you sure you want to undeploy agent with resource name '{resource_name}'? (yes/no): ")
             if confirmation.lower() == "yes":
                 result = agent_engine_manager.delete_agent(resource_name)
                 print(result)
             else:
-                print("Deletion cancelled.")
+                print("Undeployment cancelled.")
 
-        elif action == "get":
+        elif action == "get_deployed_agent":
             resource_id = get_parameter(
                 "resource_id", args, 
                 prompt="Enter resource ID of the agent to get",
                 required=True
             )
-            if not resource_id:
-                print("Resource ID is required for the 'get' action.")
-                return
             result = agent_engine_manager.get_agent(resource_id)
             print(result)
 
-        elif action == "list_by_name":
+        elif action == "list_deployed_agents_by_name":
             display_name = get_parameter(
                 "display_name", args, 
                 prompt="Enter display name of the agent to list",
                 required=True
             )
-            if not display_name:
-                print("Display name is required for the 'list_by_name' action.")
-                return
             result = agent_engine_manager.list_agents_by_display_name(display_name)
             print(result)
-        else:
-            # This case should ideally not be reached due to 'choices' in add_argument
-            print(f"Invalid action: {action}")
-            parser.print_help()
+        # No 'else' needed here as action is validated earlier
 
+    except ValueError as ve: # Catch errors from get_parameter if required field is missing
+        logger.error(f"Configuration error: {ve}")
+    except RuntimeError as re: # Catch errors from _ensure_vertex_ai_initialized
+        logger.error(f"SDK Initialization error: {re}")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        # You might want to add more specific error handling or logging here
-        # For example, if agent_engine_manager functions can raise specific exceptions
+        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
-    # Note: For agent_engine_manager to work,
-    # ensure Vertex AI is initialized, typically with vertexai.init()
-    # This client assumes that initialization is handled elsewhere or not needed for these specific SDK calls
-    # If agent_engine_manager.py functions require explicit vertexai.init(),
-    # you might need to add it here or ensure it's called before using the client.
+    # The client now handles calling agent_engine_manager.initialize_vertex_ai()
+    # with the project_id and location obtained from CLI args, .env, or user prompt.
     main()

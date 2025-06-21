@@ -1,10 +1,18 @@
  {
-    "project_id": "your_project_id",
-    "app_id": "your_app_id",
-    "display_name": "Agent Name",
-    "description": "Agent Description",
-    "tool_description": "Tool Description",
-    "adk_deployment_id": "your_deployment_id",
-    "auth_id": "your_auth_id",
-    "agent_id": "your_agent_id"
+    "project_id": "your-gcp-project-id",
+    "location": "us-central1",    
+    "re_resource_name": "projects/your-gcp-project-id/locations/us-central1/agents/your-deployed-agent-engine-id",
+    "re_resource_id": "your-deployed-agent-engine-id",
+    "re_display_name": "My Deployed Agent Engine Name",
+    "app_id": "your-agentspace-app-id",
+    "agent_id": "registered-agent-id-from-agentspace",
+    "ars_display_name": "My Registered Agent Name",
+    "description": "Agent Description for Registry",
+    "tool_description": "Tool Description for Registry",
+    "adk_deployment_id": "your-reasoning-engine-id-from-agent-engine",
+    "auth_id": "your-oauth-auth-id-if-any",
+    "icon_uri": "https://example.com/icon.png",
+    "api_location": "global",
+    "re_location": "global"
+
  }
