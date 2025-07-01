@@ -22,12 +22,7 @@ This client provides a command-line interface to interact with both the the **Ag
 3.  **Install dependencies:** Install the required Python packages.
 
     ```bash
-    # Ensure you have a requirements.txt file that includes at least:
-    # google-cloud-aiplatform (for agent_engine_manager.py)
-    # google-auth (for as_agent_registry_service.py)
-    pip install -r requirements.txt
-    # Or, install the packages manually if not in requirements.txt:
-    # pip install google-cloud-aiplatform google-auth
+     pip install google-cloud-aiplatform google-auth
     ```
 
 ## Configuration
