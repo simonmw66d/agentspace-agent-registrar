@@ -16,7 +16,10 @@ def get_endpoint(location):
     if location == "global":
         return "discoveryengine.googleapis.com"
     else:
-        return f"{location}-discoveryengine.googleapis.com"
+        if location[:2] in {"us", "eu"}:
+            return f"{location}-discoveryengine.googleapis.com"
+        
+        raise ValueError(f"Invalid location: {location}")
 
 
 def create_authorization(
@@ -93,3 +96,6 @@ def list_authorizations(project_id: str, location: str):
     response.raise_for_status()
 
     return response.json()
+
+if __name__ == "__main__":
+    print(list_authorizations("ai-ml-team-sandbox", "us"))
