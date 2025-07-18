@@ -12,14 +12,10 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def get_endpoint(location):
-    if location == "global":
-        return "discoveryengine.googleapis.com"
-    else:
-        if location[:2] in {"us", "eu"}:
-            return f"{location}-discoveryengine.googleapis.com"
-        
-        raise ValueError(f"Invalid location: {location}")
+def get_endpoint(location: str) -> str:
+    if location[:2] in ["us", "eu"]:
+        return f"{location[:2]}-discoveryengine.googleapis.com"
+    return "discoveryengine.googleapis.com"  # global
 
 
 def create_authorization(
