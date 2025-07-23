@@ -25,23 +25,23 @@ A modern, refactored command-line interface for managing agents in both **Agent 
 git clone <repository-url>
 cd agentspace-agent-registrar
 
-# Install dependencies using uv (recommended)   
-uv sync
+# Install the CLI tool globally using uv (recommended)
+uv tool install . -e
 
-# Or using pip
-pip install -e .
+# Or install dependencies only (for development)
+uv sync
 ```
 
 ### Basic Usage
 
 ```bash
 # Show available commands
-uv run python -m agentspace_registrar.cli.main --help
+agentspace-registrar --help
 
 # List all subcommands
-uv run python -m agentspace_registrar.cli.main registry --help
-uv run python -m agentspace_registrar.cli.main engine --help
-uv run python -m agentspace_registrar.cli.main auth --help
+agentspace-registrar registry --help
+agentspace-registrar engine --help
+agentspace-registrar auth --help
 ```
 
 ## 📁 Project Structure
@@ -117,7 +117,7 @@ export AGENTSPACE_API_LOCATION="global"
 
 ```bash
 # Create a new agent
-uv run python -m agentspace_registrar.cli.main registry create \
+agentspace-registrar registry create \
   --project-id your-project \
   --app-id your-app \
   --display-name "My Agent" \
@@ -126,28 +126,28 @@ uv run python -m agentspace_registrar.cli.main registry create \
   --adk-deployment-id your-deployment-id
 
 # List all agents
-uv run python -m agentspace_registrar.cli.main registry list \
+agentspace-registrar registry list \
   --project-id your-project \
   --app-id your-app
 
 # Get a specific agent
-uv run python -m agentspace_registrar.cli.main registry get agent-id \
+agentspace-registrar registry get agent-id \
   --project-id your-project \
   --app-id your-app
 
 # Update an agent
-uv run python -m agentspace_registrar.cli.main registry update agent-id \
+agentspace-registrar registry update agent-id \
   --project-id your-project \
   --app-id your-app \
   --display-name "Updated Name"
 
 # Get agents by display name
-uv run python -m agentspace_registrar.cli.main registry get-by-name "Agent Name" \
+agentspace-registrar registry get-by-name "Agent Name" \
   --project-id your-project \
   --app-id your-app
 
 # Delete an agent
-uv run python -m agentspace_registrar.cli.main registry delete agent-id \
+agentspace-registrar registry delete agent-id \
   --project-id your-project \
   --app-id your-app
 ```
@@ -156,22 +156,22 @@ uv run python -m agentspace_registrar.cli.main registry delete agent-id \
 
 ```bash
 # List all deployed agents
-uv run python -m agentspace_registrar.cli.main engine list \
+agentspace-registrar engine list \
   --project-id your-project \
   --location us-central1
 
 # Get a specific agent
-uv run python -m agentspace_registrar.cli.main engine get resource-id \
+agentspace-registrar engine get resource-id \
   --project-id your-project \
   --location us-central1
 
 # List agents by display name
-uv run python -m agentspace_registrar.cli.main engine list-by-name "Agent Name" \
+agentspace-registrar engine list-by-name "Agent Name" \
   --project-id your-project \
   --location us-central1
 
 # Delete an agent
-uv run python -m agentspace_registrar.cli.main engine delete resource-name \
+agentspace-registrar engine delete resource-name \
   --project-id your-project \
   --location us-central1
 ```
@@ -180,23 +180,23 @@ uv run python -m agentspace_registrar.cli.main engine delete resource-name \
 
 ```bash
 # Create a new authorization
-uv run python -m agentspace_registrar.cli.main auth create auth-id \
+agentspace-registrar auth create auth-id \
   --project-id your-project \
   --location us \
   --scopes email
 
 # List all authorizations
-uv run python -m agentspace_registrar.cli.main auth list \
+agentspace-registrar auth list \
   --project-id your-project \
   --location us
 
 # Delete an authorization
-uv run python -m agentspace_registrar.cli.main auth delete auth-id \
+agentspace-registrar auth delete auth-id \
   --project-id your-project \
   --location us
 
 # Refresh authorization (create new, delete old)
-uv run python -m agentspace_registrar.cli.main auth refresh old-auth-id \
+agentspace-registrar auth refresh old-auth-id \
   --project-id your-project \
   --location us \
   --new-auth-id new-auth-id
@@ -208,10 +208,10 @@ uv run python -m agentspace_registrar.cli.main auth refresh old-auth-id \
 
 | Old Command | New Command |
 |-------------|-------------|
-| `python as_registry_client.py register_agent --project_id x --app_id y` | `uv run python -m agentspace_registrar.cli.main registry create --project-id x --app-id y` |
-| `python as_registry_client.py list_registry --project_id x --app_id y` | `uv run python -m agentspace_registrar.cli.main registry list --project-id x --app-id y` |
-| `python as_registry_client.py list_deployed_agents --project_id x` | `uv run python -m agentspace_registrar.cli.main engine list --project-id x` |
-| `python refresh_authz.py` | `uv run python -m agentspace_registrar.cli.main auth refresh old-id` |
+| `python as_registry_client.py register_agent --project_id x --app_id y` | `agentspace-registrar registry create --project-id x --app-id y` |
+| `python as_registry_client.py list_registry --project_id x --app_id y` | `agentspace-registrar registry list --project-id x --app-id y` |
+| `python as_registry_client.py list_deployed_agents --project_id x` | `agentspace-registrar engine list --project-id x` |
+| `python refresh_authz.py` | `agentspace-registrar auth refresh old-id` |
 
 ### Key Changes
 
@@ -243,7 +243,7 @@ uv run mypy src/
 
 ```bash
 # Run the CLI help to verify installation
-uv run python -m agentspace_registrar.cli.main --help
+agentspace-registrar --help
 ```
 
 ## 🔧 Troubleshooting
@@ -259,7 +259,6 @@ uv run python -m agentspace_registrar.cli.main --help
 Enable debug logging by setting the environment variable:
 
 ```bash
-export PYTHONPATH=src
 export LOG_LEVEL=DEBUG
-uv run python -m agentspace_registrar.cli.main registry list --project-id your-project --app-id your-app
+agentspace-registrar registry list --project-id your-project --app-id your-app
 ```
