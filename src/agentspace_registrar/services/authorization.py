@@ -5,7 +5,8 @@ Refactored from the original authorization_service.py with better error handling
 import os
 import urllib.parse
 import logging
-from typing import Dict, Any, List
+import uuid
+from typing import Dict, Any, List, Optional
 
 import httpx
 from dotenv import load_dotenv
@@ -62,8 +63,8 @@ class AuthorizationService:
         self, 
         project_id: str, 
         location: str, 
-        authorization_id: str, 
-        scopes: List[str]
+        scopes: List[str],
+        authorization_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Create a new authorization.
@@ -71,8 +72,8 @@ class AuthorizationService:
         Args:
             project_id: Google Cloud Project ID
             location: Location for authorization operations
-            authorization_id: Authorization ID to create
             scopes: OAuth scopes
+            authorization_id: Authorization ID to create (optional, will generate UUID4 if not provided)
             
         Returns:
             Created authorization data
@@ -81,6 +82,11 @@ class AuthorizationService:
             ServiceError: If the operation fails
             AuthenticationError: If authentication fails
         """
+        # Generate authorization ID if not provided
+        if authorization_id is None:
+            authorization_id = str(uuid.uuid4())
+            logger.info(f"Generated authorization ID: {authorization_id}")
+        
         endpoint = self._get_endpoint(location)
         url = f"https://{endpoint}/v1alpha/projects/{project_id}/locations/{location}/authorizations"
         headers = self._get_headers(project_id)

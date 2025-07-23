@@ -24,17 +24,14 @@ class CreateAuthorizationCommand(AuthCommand):
         authorization_id = kwargs.get('authorization_id')
         scopes = kwargs.get('scopes', ['email'])
         
-        if not authorization_id:
-            raise ValueError("authorization_id is required")
-            
         config = self.get_auth_config()
         
         from ...services.authorization import AuthorizationService
         
         service = AuthorizationService()
         return service.create_authorization(
-            authorization_id=authorization_id,
             scopes=scopes,
+            authorization_id=authorization_id,
             **config
         )
 
@@ -81,8 +78,6 @@ class RefreshAuthorizationCommand(AuthCommand):
         
         if not old_auth_id:
             raise ValueError("old_auth_id is required")
-        if not new_auth_id:
-            raise ValueError("new_auth_id is required")
             
         config = self.get_auth_config()
         
@@ -90,12 +85,17 @@ class RefreshAuthorizationCommand(AuthCommand):
         
         service = AuthorizationService()
         
-        # Create new authorization
+        # Create new authorization (new_auth_id is optional, will be auto-generated)
         create_result = service.create_authorization(
-            authorization_id=new_auth_id,
             scopes=scopes,
+            authorization_id=new_auth_id,
             **config
         )
+        
+        # Extract the actual authorization ID from the create result
+        actual_new_auth_id = new_auth_id
+        if not actual_new_auth_id and create_result.get('name'):
+            actual_new_auth_id = create_result['name'].split('/')[-1]
         
         # Delete old authorization
         delete_result = service.delete_authorization(
@@ -106,14 +106,14 @@ class RefreshAuthorizationCommand(AuthCommand):
         return {
             "created": create_result,
             "deleted": delete_result,
-            "message": f"Authorization refreshed: {old_auth_id} -> {new_auth_id}"
+            "message": f"Authorization refreshed: {old_auth_id} -> {actual_new_auth_id}"
         }
 
 
 # Command implementations
 @app.command("create")
 def create_authorization(
-    authorization_id: str = typer.Argument(..., help="Authorization ID to create"),
+    authorization_id: Optional[str] = typer.Argument(None, help="Authorization ID to create (optional, will generate UUID4 if not provided)"),
     project_id: Optional[str] = typer.Option(None, "--project-id", help="Google Cloud Project ID"),
     location: str = typer.Option("us", "--location", help="Location for authorization"),
     scopes: List[str] = typer.Option(["email"], "--scopes", help="OAuth scopes"),
@@ -124,8 +124,26 @@ def create_authorization(
     config_manager.set_cli_args(locals())
     
     command = CreateAuthorizationCommand(config_manager)
-    command.run(authorization_id=authorization_id, scopes=scopes)
-    print_success(f"Authorization '{authorization_id}' created successfully.")
+    
+    # Execute the command and get the result
+    try:
+        result = command.execute(authorization_id=authorization_id, scopes=scopes)
+        
+        # Extract the authorization ID from the result or use the provided one
+        created_auth_id = authorization_id
+        if not created_auth_id and result.get('name'):
+            # Extract ID from the name field in the response
+            created_auth_id = result['name'].split('/')[-1]
+        
+        # Print the result and success message
+        from ...utils.output import print_json
+        print_json(result)
+        print_success(f"Authorization '{created_auth_id}' created successfully.")
+        
+    except Exception as e:
+        from ...utils.output import print_error
+        print_error(f"Failed to create authorization: {e}")
+        raise typer.Exit(1)
 
 
 @app.command("list")
@@ -175,11 +193,8 @@ def refresh_authorization(
     config_file: Optional[str] = typer.Option("config.json", "--config", help="Configuration file path"),
 ):
     """Refresh authorization by creating new one and deleting old one."""
-    import uuid
-    
     if not new_auth_id:
-        new_auth_id = f"auth-{uuid.uuid4()}"
-        typer.echo(f"No new authorization ID provided. Generating: {new_auth_id}")
+        typer.echo("No new authorization ID provided. Will auto-generate UUID4.")
     
     config_manager = ConfigManager(config_file)
     config_manager.set_cli_args(locals())
@@ -189,5 +204,4 @@ def refresh_authorization(
         old_auth_id=old_auth_id,
         new_auth_id=new_auth_id,
         scopes=scopes
-    )
-    print_success(f"Authorization refreshed: {old_auth_id} -> {new_auth_id}") 
+    ) 
