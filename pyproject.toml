@@ -15,6 +15,7 @@ dependencies = [
 
 [project.scripts]
 agentspace-registrar = "agentspace_registrar.cli.main:app"
+asrgr = "agentspace_registrar.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]
