@@ -20,6 +20,9 @@ agentspace-registrar = "agentspace_registrar.cli.main:app"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentspace_registrar"]
+
 [dependency-groups]
 dev = [
     "mypy>=1.15.0",
