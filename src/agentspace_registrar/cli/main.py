@@ -30,15 +30,5 @@ app.add_typer(
     help="Authorization operations"
 )
 
-# Add a version command
-def version_callback(value: bool):
-    if value:
-        typer.echo("AgentSpace Registrar v0.1.0")
-        raise typer.Exit()
-
-app.callback()(
-    lambda version: version_callback(version)
-)
-
 if __name__ == "__main__":
     app() 
